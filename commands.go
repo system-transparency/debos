@@ -122,6 +122,21 @@ func (cmd *Command) AddBindMount(source, target string) {
 	cmd.bindMounts = append(cmd.bindMounts, mount)
 }
 
+func (cmd *Command) BindMounts() {
+	for _, mount := range cmd.bindMounts {
+		fmt.Printf("Running mount --bind %s %s\n", mount.Source, fmt.Sprintf("%s/%s", cmd.Chroot, mount.Target))
+		os.Mkdir(fmt.Sprintf("%s/%s", cmd.Chroot, mount.Target), 0755)
+		exec.Command("mount", "--bind", mount.Source, fmt.Sprintf("%s/%s", cmd.Chroot, mount.Target)).Output()
+	}
+}
+
+func (cmd *Command) CleanBindMounts() {
+	for _, mount := range cmd.bindMounts {
+		fmt.Printf("Running umount %s\n", fmt.Sprintf("%s/%s", cmd.Chroot, mount.Target))
+		exec.Command("umount", fmt.Sprintf("%s/%s", cmd.Chroot, mount.Target)).Output()
+	}
+}
+
 func (cmd Command) Run(label string, cmdline ...string) error {
 	q := newQemuHelper(cmd)
 	q.Setup()
@@ -163,11 +178,20 @@ func (cmd Command) Run(label string, cmdline ...string) error {
 		services := ServiceHelper{cmd.Chroot}
 		services.Deny()
 		defer services.Allow()
+
+	}
+
+	if cmd.ChrootMethod == CHROOT_METHOD_CHROOT {
+		cmd.BindMounts()
 	}
 
 	err := exe.Run()
 	w.flush()
 	q.Cleanup()
+
+	if cmd.ChrootMethod == CHROOT_METHOD_CHROOT {
+		cmd.CleanBindMounts()
+	}
 
 	return err
 }
