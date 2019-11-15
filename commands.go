@@ -16,7 +16,10 @@ const (
 	CHROOT_METHOD_NONE   = iota // No chroot in use
 	CHROOT_METHOD_NSPAWN        // use nspawn to create the chroot environment
 	CHROOT_METHOD_CHROOT        // use chroot to create the chroot environment
+	CHROOT_METHOD_DEFAULT       // use the user given choice
 )
+
+var DefaultChrootMethod ChrootEnterMethod = CHROOT_METHOD_NSPAWN
 
 type BindMount struct {
 	Source string
@@ -72,7 +75,7 @@ func (w *commandWrapper) flush() {
 }
 
 func NewChrootCommandForContext(context DebosContext) Command {
-	c := Command{Architecture: context.Architecture, Chroot: context.Rootdir, ChrootMethod: CHROOT_METHOD_NSPAWN}
+	c := Command{Architecture: context.Architecture, Chroot: context.Rootdir, ChrootMethod: CHROOT_METHOD_DEFAULT}
 
 	if context.EnvironVars != nil {
 		for k, v := range context.EnvironVars {
@@ -138,6 +141,10 @@ func (cmd *Command) CleanBindMounts() {
 }
 
 func (cmd Command) Run(label string, cmdline ...string) error {
+	if cmd.ChrootMethod == CHROOT_METHOD_DEFAULT {
+		cmd.ChrootMethod = DefaultChrootMethod
+	}
+
 	q := newQemuHelper(cmd)
 	q.Setup()
 

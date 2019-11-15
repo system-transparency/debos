@@ -73,6 +73,8 @@ func main() {
 		PrintRecipe   bool              `long:"print-recipe" description:"Print final recipe"`
 		DryRun        bool              `long:"dry-run" description:"Compose final recipe to build but without any real work started"`
 		DisableFakeMachine bool         `long:"disable-fakemachine" description:"Do not use fakemachine."`
+		Chroot        bool              `long:"chroot" description:"Use chroot to enter the environment."`
+		Nspawn        bool              `long:"nspawn" description:"Use systemd-nspawn to enter the environment."`
 	}
 
 	// These are the environment variables that will be detected on the
@@ -124,6 +126,14 @@ func main() {
 
 	if options.Verbose {
 		context.Verbose = options.Verbose
+	}
+
+	if options.Chroot {
+		debos.DefaultChrootMethod = debos.CHROOT_METHOD_CHROOT
+	}
+
+	if options.Nspawn {
+		debos.DefaultChrootMethod = debos.CHROOT_METHOD_NSPAWN
 	}
 
 	file := args[0]
