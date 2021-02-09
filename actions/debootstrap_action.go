@@ -13,6 +13,7 @@ Yaml syntax:
    suite: "name"
    components: <list of components>
    variant: "name"
+   verbose:
    keyring-package:
    keyring-file:
    certificate:
@@ -30,6 +31,8 @@ Optional properties:
  If no mirror is specified debos will use http://deb.debian.org/debian as default.
 
 - variant -- name of the bootstrap script variant to use
+
+- verbose -- run debootstrap with verbose output
 
 - components -- list of components to use for packages selection.
  If no components are specified debos will use main as default.
@@ -65,6 +68,7 @@ type DebootstrapAction struct {
 	Suite            string
 	Mirror           string
 	Variant          string
+	Verbose          bool   `yaml:"verbose"`
 	KeyringPackage   string `yaml:"keyring-package"`
 	KeyringFile      string `yaml:"keyring-file"`
 	Certificate      string
@@ -201,6 +205,10 @@ func (d *DebootstrapAction) Run(context *debos.DebosContext) error {
 
 	if d.Variant != "" {
 		cmdline = append(cmdline, fmt.Sprintf("--variant=%s", d.Variant))
+	}
+
+	if d.Verbose {
+		cmdline = append(cmdline, fmt.Sprintf("--verbose"))
 	}
 
 	cmdline = append(cmdline, d.Suite)
